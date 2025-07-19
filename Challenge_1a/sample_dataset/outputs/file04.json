@@ -1,9 +1,49 @@
 {
-  "title": "Parsippany -Troy Hills STEM Pathways",
+  "title": "file04",
   "outline": [
     {
-      "level": "H1",
-      "text": "Parsippany -Troy Hills STEM Pathways",
+      "level": "H2",
+      "text": "Participate in a minimum of 3 STEM",
+      "page": 1
+    },
+    {
+      "level": "H2",
+      "text": "Join and actively participate in a",
+      "page": 1
+    },
+    {
+      "level": "H2",
+      "text": "Either participate in an internship or",
+      "page": 1
+    },
+    {
+      "level": "H2",
+      "text": "4 credits of Math",
+      "page": 1
+    },
+    {
+      "level": "H2",
+      "text": "4 credits of Science",
+      "page": 1
+    },
+    {
+      "level": "H2",
+      "text": "4 credits of STEM-designated electives",
+      "page": 1
+    },
+    {
+      "level": "H2",
+      "text": "4 credits of Math - At least one math",
+      "page": 1
+    },
+    {
+      "level": "H2",
+      "text": "4 credits of Science- At least one",
+      "page": 1
+    },
+    {
+      "level": "H2",
+      "text": "impact project.",
       "page": 1
     },
     {
@@ -19,6 +59,31 @@
     {
       "level": "H3",
       "text": "DISTINCTION PATHWAY",
+      "page": 1
+    },
+    {
+      "level": "H3",
+      "text": "Mission Statement:",
+      "page": 1
+    },
+    {
+      "level": "H3",
+      "text": "Goals:",
+      "page": 1
+    },
+    {
+      "level": "H3",
+      "text": "Parsippany -Troy Hills STEM Pathways",
+      "page": 1
+    },
+    {
+      "level": "H3",
+      "text": "To provide PTHSD high school students with the opportunity to",
+      "page": 1
+    },
+    {
+      "level": "H3",
+      "text": "Science/Technology Class",
       "page": 1
     }
   ]

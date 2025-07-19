@@ -125,55 +125,121 @@ def detect_language_script(text):
     max_script = max(script_counts, key=script_counts.get)
     return max_script if script_counts[max_script] > 0 else 'english'
 
-def is_likely_heading(text, script_type="english"):
-    """Determine if text is likely a heading based on content and script."""
-    if not is_meaningful_text(text):
-        return False
+def calculate_heading_confidence(text, font_size=None, position_info=None, context=None):
+    """Calculate confidence score for text being a heading using multiple factors."""
+    confidence = 0.0
+    text_clean = text.strip()
     
-    text = text.strip()
-    text_length = len(text)
+    if not text_clean:
+        return 0.0
     
-    # Check universal patterns first
+    # Factor 1: Pattern-based scoring (40% weight)
+    pattern_score = 0.0
+    
+    # Universal numbering patterns
     for pattern in CONFIG["universal_patterns"]:
-        if re.search(pattern, text, re.IGNORECASE):
-            return True
+        if re.search(pattern, text_clean, re.IGNORECASE):
+            pattern_score = 1.0
+            break
     
-    # Get language-specific configuration
+    # Language-specific patterns
+    script_type = detect_language_script(text_clean)
     lang_config = CONFIG["language_patterns"].get(script_type, CONFIG["language_patterns"]["english"])
-    min_length, max_length = lang_config["length_range"]
     
-    # Check length bounds
-    if not (min_length <= text_length <= max_length):
-        return False
-    
-    # Language-specific pattern matching
     if script_type in ["japanese", "hindi"]:
         patterns = lang_config.get("patterns", [])
         for pattern in patterns:
-            if re.search(pattern, text):
-                return True
-        return True  # If within length bounds, likely a heading for these languages
-        
-    else:  # English and default
-        # Check for keywords
+            if re.search(pattern, text_clean):
+                pattern_score = max(pattern_score, 0.9)
+                break
+    else:  # English
         keywords = lang_config.get("keywords", [])
-        text_lower = text.lower()
+        text_lower = text_clean.lower()
         if any(keyword in text_lower for keyword in keywords):
-            return True
-        
-        # Check for ALL CAPS (common heading style)
-        if text.isupper() and text_length >= 3:
-            return True
-        
-        # Check for Title Case (common heading style)
-        if text.istitle() and text_length >= 5:
-            return True
-        
-        # General check for English
-        if text[0].isupper():
-            return True
+            pattern_score = max(pattern_score, 0.8)
     
-    return False
+    confidence += pattern_score * 0.4
+    
+    # Factor 2: Text formatting (30% weight)
+    format_score = 0.0
+    
+    # ALL CAPS
+    if text_clean.isupper() and len(text_clean) >= 3:
+        format_score = max(format_score, 0.8)
+    
+    # Title Case
+    elif text_clean.istitle() and len(text_clean) >= 5:
+        format_score = max(format_score, 0.7)
+    
+    # Starts with capital
+    elif text_clean[0].isupper():
+        format_score = max(format_score, 0.4)
+    
+    confidence += format_score * 0.3
+    
+    # Factor 3: Length characteristics (20% weight)
+    length_score = 0.0
+    text_length = len(text_clean)
+    min_length, max_length = lang_config["length_range"]
+    
+    if min_length <= text_length <= max_length:
+        # Optimal length range gets full score
+        length_score = 1.0
+    elif text_length < min_length:
+        # Too short - penalize heavily
+        length_score = 0.2
+    elif text_length > max_length:
+        # Too long - moderate penalty
+        length_score = max(0.3, 1.0 - (text_length - max_length) / max_length)
+    
+    confidence += length_score * 0.2
+    
+    # Factor 4: Font size relative importance (10% weight)
+    font_score = 0.0
+    if font_size and context and "font_percentiles" in context:
+        percentiles = context["font_percentiles"]
+        if font_size >= percentiles.get("90th", 0):
+            font_score = 1.0  # Top 10% of font sizes
+        elif font_size >= percentiles.get("75th", 0):
+            font_score = 0.7  # Top 25% of font sizes
+        elif font_size >= percentiles.get("50th", 0):
+            font_score = 0.4  # Above median
+        else:
+            font_score = 0.1  # Below median - less likely heading
+    
+    confidence += font_score * 0.1
+    
+    return min(confidence, 1.0)  # Cap at 1.0
+
+def determine_heading_level(confidence, text, context=None):
+    """Determine heading level based on confidence and additional context."""
+    
+    # High confidence patterns get priority
+    if confidence >= 0.8:
+        # Check for chapter/major section patterns
+        if re.search(r'(chapter|chapter\s+\d+|第\d+章|अध्याय)', text.lower()):
+            return "H1"
+        elif re.search(r'(\d+\.\d+|\d+\.\d+\.\d+|section)', text.lower()):
+            return "H2"
+        else:
+            return "H1"  # Default high confidence to H1
+    
+    elif confidence >= 0.6:
+        # Medium confidence - usually H2 or H3
+        if re.search(r'(\d+\.\d+\.\d+)', text):
+            return "H3"
+        elif re.search(r'(\d+\.\d+)', text):
+            return "H2"
+        else:
+            return "H2"  # Default medium confidence to H2
+    
+    elif confidence >= 0.4:
+        # Lower confidence - likely H3
+        return "H3"
+    
+    else:
+        # Below threshold - not a heading
+        return None
 
 def extract_outline(pdf_path):
     outline = []
@@ -181,7 +247,7 @@ def extract_outline(pdf_path):
     title_text = ""
     all_text_runs = []  # Store all text runs for language detection
     
-    # First pass: collect font statistics and all text
+    # First pass: collect font statistics for context
     with redirect_stderr(StringIO()):  # Suppress CropBox warnings
         with pdfplumber.open(pdf_path) as pdf:
             for page_num, page in enumerate(pdf.pages, start=1):
@@ -192,20 +258,6 @@ def extract_outline(pdf_path):
                         continue
                     size = round(char["size"], 1)
                     font_stats[size] = font_stats.get(size, 0) + 1
-
-    # Step 1: Identify the top N most common font sizes (bigger => more likely heading)
-    max_levels = CONFIG["font_analysis"]["max_font_levels"]
-    font_sizes = sorted(font_stats.items(), key=lambda x: -x[0])[:max_levels]
-    
-    if not font_sizes:
-        return {"title": pdf_path.stem, "outline": []}
-    
-    sizes_to_levels = {font_sizes[0][0]: "H1"}
-
-    if len(font_sizes) > 1:
-        sizes_to_levels[font_sizes[1][0]] = "H2"
-    if len(font_sizes) > 2:
-        sizes_to_levels[font_sizes[2][0]] = "H3"
 
     # Step 2: Extract text runs and detect language
     with redirect_stderr(StringIO()):  # Suppress CropBox warnings
@@ -267,20 +319,67 @@ def extract_outline(pdf_path):
     all_text = " ".join([run["text"] for run in all_text_runs[:sample_size]])  # Sample first N runs
     primary_script = detect_language_script(all_text)
     
-    # Step 3: Filter and classify headings with multilingual awareness
+    # Calculate font size percentiles for context
+    all_sizes = []
+    for size, count in font_stats.items():
+        all_sizes.extend([size] * count)
+    
+    font_percentiles = {}
+    if all_sizes:
+        all_sizes.sort()
+        font_percentiles = {
+            "50th": all_sizes[len(all_sizes) // 2] if all_sizes else 0,
+            "75th": all_sizes[int(len(all_sizes) * 0.75)] if all_sizes else 0,
+            "90th": all_sizes[int(len(all_sizes) * 0.90)] if all_sizes else 0,
+        }
+    
+    context = {"font_percentiles": font_percentiles}
+    
+    # Step 3: Analyze each text run for heading likelihood using confidence scoring
+    heading_candidates = []
     for run in all_text_runs:
-        if (run["size"] in sizes_to_levels and 
-            is_meaningful_text(run["text"]) and
-            is_likely_heading(run["text"], primary_script)):
+        if not is_meaningful_text(run["text"]):
+            continue
             
-            level = sizes_to_levels[run["size"]]
-            if not title_text and level == "H1":
-                title_text = run["text"]
-            outline.append({
-                "level": level,
-                "text": run["text"],
-                "page": run["page"]
-            })
+        confidence = calculate_heading_confidence(
+            text=run["text"],
+            font_size=run["size"],
+            context=context
+        )
+        
+        # Use confidence threshold instead of binary classification
+        if confidence >= 0.4:  # Adjustable threshold
+            level = determine_heading_level(confidence, run["text"], context)
+            if level:
+                heading_candidates.append({
+                    "text": run["text"],
+                    "level": level,
+                    "page": run["page"],
+                    "confidence": confidence,
+                    "size": run["size"]
+                })
+    
+    # Step 4: Post-process and finalize headings
+    # Sort by confidence and remove duplicates/overlaps
+    heading_candidates.sort(key=lambda x: -x["confidence"])
+    
+    seen_texts = set()
+    for candidate in heading_candidates:
+        # Skip near-duplicates
+        text_normalized = re.sub(r'\s+', ' ', candidate["text"].lower().strip())
+        if text_normalized in seen_texts:
+            continue
+        seen_texts.add(text_normalized)
+        
+        # Set title from first high-confidence H1
+        if not title_text and candidate["level"] == "H1" and candidate["confidence"] >= 0.7:
+            title_text = candidate["text"]
+        
+        outline.append({
+            "level": candidate["level"],
+            "text": candidate["text"],
+            "page": candidate["page"]
+        })
 
     # Step 4: Build JSON with fallback title
     return {
