@@ -13,11 +13,11 @@ That’s the vision I pursued in the **Connecting the Dots Challenge** — trans
 
 ## 🧠 The Journey & What I Built
 
-### 🏁 Round 1 — Brains Behind the PDF
+### 🏁 Round 1.1 — Brains Behind the PDF
 
 I started by developing a fast and accurate PDF outline extractor that doesn't just rely on fonts — it *understands* layout, structure, and intent. Using a multi-factor confidence system, I identified headings, assigned hierarchy levels, and produced structured outputs that are schema-compliant and robust.
 
-### 🎯 Round 2 — Contextual PDF Exploration
+### 🎯 Round 1.2 — Contextual PDF Exploration
 
 Building on the foundation from Round 1, I extended the work to support **multi-document analysis**. I created a solution that takes in diverse PDF collections, considers personas and specific tasks, and extracts the most relevant content. From travel planning to recipe extraction, the system adapts to the user’s goals and delivers context-rich insights.
 
