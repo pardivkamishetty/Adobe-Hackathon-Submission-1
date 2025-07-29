@@ -1,22 +1,7 @@
-# Challenge 1a: PDF Processing Solution
-
-
 # Challenge 1a: PDF Outline Extraction - Approach Explanation
 
 ## Overview
 This solution implements an advanced PDF outline extraction system that intelligently identifies document structure without relying solely on font properties. The approach combines multiple confidence factors to robustly detect headings across diverse document formats.
-
-## Solution Structure
-```
-Challenge_1a/
-├── sample_dataset/
-│   ├── outputs/         # JSON files provided as outputs.
-│   ├── pdfs/            # Input PDF files
-│   └── schema/          # Output schema definition
-│       └── output_schema.json
-├── Dockerfile           # Docker container configuration
-├── process_pdfs.py      # Sample processing script
-└── README.md           # This file
 
 ## Core Algorithm
 
@@ -141,7 +126,3 @@ docker run --rm -v "${PWD}/sample_dataset:/app/sample_dataset" challenge-1a
 - **Docker Compatibility**: Verified across container environments
 
 This approach ensures reliable, accurate, and efficient PDF outline extraction that meets the demanding requirements of the Adobe India Hackathon 2025 Challenge 1a.
-
----
-
- 
