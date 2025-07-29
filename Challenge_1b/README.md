@@ -89,5 +89,7 @@ Challenge_1b/
 - Structured JSON output with metadata
 
 ---
-
-**Note**: This README provides a brief overview of the Challenge 1b solution structure based on available sample data. 
+### [Challenge 1b: Multi-Collection PDF Analysis](./Challenge_1b/approach_explanation.md)
+Approach Explanation: Insight into the PDF analysis strategy, section extraction logic, and ranking methods.
+### [Challenge 1b: Multi-Collection PDF Analysis](./Challenge_1b/execution_instructions.md)
+Execution Instructions: Step-by-step guide to running and testing the solution.
