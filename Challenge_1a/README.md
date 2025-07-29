@@ -1,6 +1,6 @@
 # Challenge 1a: PDF Processing Solution
 
-```
+
 # Challenge 1a: PDF Outline Extraction - Approach Explanation
 
 ## Overview
