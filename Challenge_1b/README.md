@@ -89,7 +89,7 @@ Challenge_1b/
 - Structured JSON output with metadata
 
 ---
-### [Challenge 1b: Multi-Collection PDF Analysis](./approach_explanation.md)
+### [Challenge 1b:Approach explanation ](./approach_explanation.md)
 Approach Explanation: Insight into the PDF analysis strategy, section extraction logic, and ranking methods.
-### [Challenge 1b: Multi-Collection PDF Analysis](./execution_instructions.md)
+### [Challenge 1b: Execution Instructions ](./execution_instructions.md)
 Execution Instructions: Step-by-step guide to running and testing the solution.
